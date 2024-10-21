@@ -2,7 +2,6 @@ package org.example.jsoup;
 
 import org.example.model.Post;
 import org.example.utils.DateTimeParser;
-import org.example.utils.HabrCareerDateTimeParser;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -17,18 +16,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HabrCareerParse implements Parse {
-
-    public static final String PREFIX = "/vacancies?page=";
-    public static final String SUFFIX = "&q=Java%20developer&type=all";
-    public static final int PAGES = 5;
-
     private static final Logger LOG = LoggerFactory.getLogger(HabrCareerParse.class.getName());
     private static final String SOURCE_LINK = "https://career.habr.com";
-
+    private static final String PREFIX = "/vacancies?page=";
+    private static final String SUFFIX = "&q=";
+    private static final String POSTFIX = "&type=all";
     private final DateTimeParser dateTimeParser;
+    private String keywords;
 
-    public HabrCareerParse(DateTimeParser dateTimeParser) {
+    public HabrCareerParse(DateTimeParser dateTimeParser, String keywords) {
         this.dateTimeParser = dateTimeParser;
+        this.keywords = keywords;
     }
 
     /**
@@ -36,15 +34,14 @@ public class HabrCareerParse implements Parse {
      * But if the GUI has been changed,
      * then the posts in the list may be partially filled
      * or the list will be filled with null values.
-     * @param fullLink link to resource for parsing
      * @return list of posts
      */
     @Override
-    public List<Post> list(String fullLink) {
+    public List<Post> list(String currentLink) {
         List<Post> posts = new ArrayList<>();
-        for (int i = 1; i <= PAGES; i++) {
-            Connection connection = Jsoup.connect(fullLink);
+
             try {
+                Connection connection = Jsoup.connect(currentLink);
                 Document document = connection.get();
                 Elements rows = document.select(".vacancy-card__inner");
                 rows.forEach(row -> {
@@ -54,7 +51,7 @@ public class HabrCareerParse implements Parse {
                         Element linkElement = titleElement.child(0);
                         post = new Post();
                         post.setTitle(titleElement.text());
-                        String link = String.format("%s%s", SOURCE_LINK, linkElement.attr("href"));
+                        String link = "%s%s".formatted(SOURCE_LINK, linkElement.attr("href"));
                         post.setLink(link);
                         post.setDescription(retrieveDescription(link));
                         Element dateElement = row.select(".vacancy-card__date").first();
@@ -68,10 +65,20 @@ public class HabrCareerParse implements Parse {
                     posts.add(post);
                 });
             } catch (IOException e) {
-                LOG.error("Something is wrong with link {}", fullLink, e);
+                LOG.error("Something is wrong with link {}", currentLink, e);
             }
-        }
         return posts;
+    }
+
+    @Override
+    public String currentPage(int index) {
+        return "%s%s%d%s%s%s".formatted(
+                SOURCE_LINK,
+                PREFIX,
+                index,
+                SUFFIX,
+                this.keywords,
+                POSTFIX);
     }
 
     private String retrieveDescription(String link) {
@@ -87,11 +94,5 @@ public class HabrCareerParse implements Parse {
             LOG.error("Something is wrong with link {}", link, e);
         }
         return text;
-    }
-
-    public static void main(String[] args) {
-        String fullLink = "%s%s%d%s".formatted(SOURCE_LINK, PREFIX, PAGES, SUFFIX);
-        HabrCareerParse parse = new HabrCareerParse(new HabrCareerDateTimeParser());
-        System.out.println(parse.list(fullLink));
     }
 }

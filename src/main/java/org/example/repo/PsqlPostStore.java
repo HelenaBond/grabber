@@ -1,12 +1,10 @@
 package org.example.repo;
 
 import org.example.model.Post;
-import org.example.quartz.AlertRabbit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -42,6 +40,10 @@ public class PsqlPostStore implements Store {
         }
     }
 
+    /**
+     * Get all posts from database.
+     * @return posts without descriptions
+     */
     @Override
     public List<Post> getAll() {
         List<Post> allPosts = new ArrayList<>();
@@ -67,6 +69,7 @@ public class PsqlPostStore implements Store {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     post = getPost(resultSet);
+                    post.setDescription(resultSet.getString("text"));
                 }
             }
         } catch (SQLException e) {
@@ -86,28 +89,8 @@ public class PsqlPostStore implements Store {
         Post post = new Post();
         post.setId(resultSet.getInt("id"));
         post.setTitle(resultSet.getString("name"));
-        post.setDescription(resultSet.getString("text"));
         post.setLink(resultSet.getString("link"));
         post.setCreated(resultSet.getTimestamp("created").toLocalDateTime());
         return post;
-    }
-
-    public static void main(String[] args) {
-        Post test = new Post();
-        test.setTitle("Title");
-        test.setDescription("Text");
-        test.setLink("some link");
-        test.setCreated(LocalDateTime.now());
-        System.out.println(test);
-        try (Store psqlPostStore = new PsqlPostStore(AlertRabbit.readProps("rabbit.properties"))) {
-            psqlPostStore.save(test);
-            List<Post> posts = psqlPostStore.getAll();
-            System.out.println(posts);
-            Post post = psqlPostStore.findById(posts.get(0).getId());
-            System.out.println(post);
-            System.out.println(test.getLink().equals(post.getLink()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 }
