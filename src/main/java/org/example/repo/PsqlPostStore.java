@@ -40,10 +40,6 @@ public class PsqlPostStore implements Store {
         }
     }
 
-    /**
-     * Get all posts from database.
-     * @return posts without descriptions
-     */
     @Override
     public List<Post> getAll() {
         List<Post> allPosts = new ArrayList<>();
@@ -69,7 +65,6 @@ public class PsqlPostStore implements Store {
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     post = getPost(resultSet);
-                    post.setDescription(resultSet.getString("text"));
                 }
             }
         } catch (SQLException e) {
@@ -89,6 +84,7 @@ public class PsqlPostStore implements Store {
         Post post = new Post();
         post.setId(resultSet.getInt("id"));
         post.setTitle(resultSet.getString("name"));
+        post.setDescription(resultSet.getString("text"));
         post.setLink(resultSet.getString("link"));
         post.setCreated(resultSet.getTimestamp("created").toLocalDateTime());
         return post;

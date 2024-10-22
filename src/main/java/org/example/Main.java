@@ -5,6 +5,7 @@ import org.example.jsoup.Parse;
 import org.example.quartz.Grabber;
 import org.example.repo.PsqlPostStore;
 import org.example.repo.Store;
+import org.example.server.Simple;
 import org.example.utils.HabrCareerDateTimeParser;
 import org.quartz.Scheduler;
 import org.quartz.impl.StdSchedulerFactory;
@@ -24,8 +25,10 @@ public class Main {
 
         Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
         scheduler.start();
-        try (Store store = new PsqlPostStore(config)) {
-            new Grabber(parse, store, scheduler, config).init();
-        }
+
+        Store store = new PsqlPostStore(config);
+        Simple server = new Simple(Integer.parseInt(config.getProperty("port")));
+        server.web(store);
+        new Grabber(parse, store, scheduler, config).init();
     }
 }

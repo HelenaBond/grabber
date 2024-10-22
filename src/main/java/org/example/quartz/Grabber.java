@@ -44,11 +44,6 @@ public class Grabber implements Grab {
                 .withSchedule(times)
                 .build();
         scheduler.scheduleJob(job, trigger);
-        try {
-            Thread.sleep(50000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static class GrabJob implements Job {
