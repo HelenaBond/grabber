@@ -14,10 +14,10 @@ public class PsqlPostStore implements Store {
     private final Connection connection;
 
     public PsqlPostStore(Properties config) {
-        String url = config.getProperty("url");
-        String user = config.getProperty("username");
-        String pass = config.getProperty("password");
         try {
+            String url = config.getProperty("url");
+            String user = config.getProperty("username");
+            String pass = config.getProperty("password");
             Class.forName(config.getProperty("driver-class-name"));
             connection = DriverManager.getConnection(url, user, pass);
         } catch (Exception e) {
